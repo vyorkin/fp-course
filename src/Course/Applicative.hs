@@ -62,14 +62,9 @@ instance Applicative ExactlyOne where
 -- >>> (+1) :. (*2) :. Nil <*> 1 :. 2 :. 3 :. Nil
 -- [2,3,4,2,4,6]
 instance Applicative List where
-  pure ::
-    a
-    -> List a
+  pure :: a -> List a
   pure = (:. Nil)
-  (<*>) ::
-    List (a -> b)
-    -> List a
-    -> List b
+  (<*>) :: List (a -> b) -> List a -> List b
   fs <*> xs = flatMap (flip map xs) fs
 
 -- (<*>) = zipWith ($) -- is not good enough,

@@ -1,15 +1,15 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RebindableSyntax    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RebindableSyntax #-}
 
 module Course.FileIO where
 
-import Course.Core
 import Course.Applicative
-import Course.Monad
+import Course.Core
 import Course.Functor
 import Course.List
+import Course.Monad
 
 {-
 
@@ -42,7 +42,7 @@ Consideration --
 
 Example --
 Given file files.txt, containing:
-  a.txt
+ a.txt
   b.txt
   c.txt
 
@@ -85,8 +85,9 @@ printFile ::
   FilePath
   -> Chars
   -> IO ()
-printFile =
-  error "todo: Course.FileIO#printFile"
+printFile fileName contents  = do
+  putStrLn $ "============ " ++ fileName
+  putStrLn contents
 
 -- Given a list of (file name and file contents), print each.
 -- Use @printFile@.
@@ -94,15 +95,19 @@ printFiles ::
   List (FilePath, Chars)
   -> IO ()
 printFiles =
-  error "todo: Course.FileIO#printFiles"
+  void . traverse' (uncurry printFile)
+
+traverse' :: Applicative f => (a -> f b) -> List a -> f (List b)
+traverse' f = sequence . map f
 
 -- Given a file name, return (file name and file contents).
 -- Use @readFile@.
 getFile ::
   FilePath
   -> IO (FilePath, Chars)
-getFile =
-  error "todo: Course.FileIO#getFile"
+getFile filePath = do
+  contents <- readFile filePath
+  return (filePath, contents)
 
 -- Given a list of file names, return list of (file name and file contents).
 -- Use @getFile@.
@@ -110,21 +115,24 @@ getFiles ::
   List FilePath
   -> IO (List (FilePath, Chars))
 getFiles =
-  error "todo: Course.FileIO#getFiles"
+  traverse' getFile
 
 -- Given a file name, read it and for each line in that file, read and print contents of each.
 -- Use @getFiles@ and @printFiles@.
 run ::
   FilePath
   -> IO ()
-run =
-  error "todo: Course.FileIO#run"
+run filePath = do
+  fileContent <- readFile filePath
+  let fileNames = lines fileContent
+  files <- getFiles fileNames
+  printFiles files
 
 -- /Tip:/ use @getArgs@ and @run@
 main ::
   IO ()
 main =
-  error "todo: Course.FileIO#main"
+  headOr (error "Missing filePath") <$> getArgs >>= run
 
 ----
 
@@ -132,3 +140,5 @@ main =
 -- ? `sequence . (<$>)`
 -- ? `void . sequence . (<$>)`
 -- Factor it out.
+
+-- sequence . (<$>) is a well-known `traverse'` function

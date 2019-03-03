@@ -2,15 +2,15 @@
 
 module Course.MonadTutorial where
 
-import Control.Category(Category((.)))
-import Control.Monad(Monad(..), (=<<))
-import Data.Eq(Eq)
-import Data.Foldable(foldr)
-import Data.Functor(Functor(fmap))
-import Data.Int(Int)
-import Data.String(IsString(fromString))
-import Prelude(Show)
-import System.IO(IO)
+import Control.Category (Category ((.)))
+import Control.Monad (Monad (..), (=<<))
+import Data.Eq (Eq)
+import Data.Foldable (foldr)
+import Data.Functor (Functor (fmap))
+import Data.Int (Int)
+import Data.String (IsString (fromString))
+import Prelude (Show)
+import System.IO (IO)
 
 {-
 
@@ -95,11 +95,7 @@ sequenceId ::
   [Id a]
   -> Id [a]
 sequenceId =
-  foldr (\a as ->
-    bindId (\a' ->
-    bindId (\as' ->
-    pureId (a' : as')) as) a)
-  (pureId [])
+  foldr (\a as -> bindId (\a' -> bindId (\as' -> pureId (a' : as')) as) a) (pureId [])
 
 ----
 
@@ -448,4 +444,3 @@ class BindAndPure f where
   pure ::
     a
     -> f a
-
