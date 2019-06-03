@@ -178,16 +178,8 @@ instance Monad Parser where
 instance Applicative Parser where
   pure :: a -> Parser a
   pure = valueParser
-
   (<*>) :: Parser (a -> b) -> Parser a -> Parser b
-  (P pab) <*> (P pa) = P $ \i ->
-    let f = pab i
-        a = pa i
-    in
-      onResult a undefined -- TODO: continue here
-
--- pab :: Input -> ParseResult (a -> b)
--- pa  :: Input -> ParseResult a
+  (P pab) <*> p = (\a -> P $ \i -> onResult (pab i) (\r fn -> Result r (fn a))) =<< p
 
 -- | Return a parser that produces a character but fails if
 --
@@ -203,7 +195,7 @@ instance Applicative Parser where
 -- >>> isErrorResult (parse (satisfy isUpper) "abc")
 -- True
 satisfy :: (Char -> Bool) -> Parser Char
-satisfy = error "todo: Course.Parser#satisfy"
+satisfy p = (\a -> if p a then pure a else unexpectedCharParser a) =<< character
 
 -- | Return a parser that produces the given character but fails if
 --
@@ -213,7 +205,7 @@ satisfy = error "todo: Course.Parser#satisfy"
 --
 -- /Tip:/ Use the @satisfy@ function.
 is :: Char -> Parser Char
-is = error "todo: Course.Parser#is"
+is = satisfy . (==)
 
 -- | Return a parser that produces a character between '0' and '9' but fails if
 --
@@ -223,7 +215,7 @@ is = error "todo: Course.Parser#is"
 --
 -- /Tip:/ Use the @satisfy@ and @Data.Char#isDigit@ functions.
 digit :: Parser Char
-digit = error "todo: Course.Parser#digit"
+digit = satisfy isDigit
 
 --
 -- | Return a parser that produces a space character but fails if
@@ -234,7 +226,7 @@ digit = error "todo: Course.Parser#digit"
 --
 -- /Tip:/ Use the @satisfy@ and @Data.Char#isSpace@ functions.
 space :: Parser Char
-space = error "todo: Course.Parser#space"
+space = satisfy isSpace
 
 -- | Return a parser that continues producing a list of values from the given parser.
 --
@@ -258,7 +250,7 @@ space = error "todo: Course.Parser#space"
 -- >>> parse (list (character *> valueParser 'v')) ""
 -- Result >< ""
 list :: Parser a -> Parser (List a)
-list = error "todo: Course.Parser#list"
+list p = list1 p ||| pure Nil
 
 -- | Return a parser that produces at least one value from the given parser then
 -- continues producing a list of values from the given parser (to ultimately produce a non-empty list).
@@ -274,7 +266,10 @@ list = error "todo: Course.Parser#list"
 -- >>> isErrorResult (parse (list1 (character *> valueParser 'v')) "")
 -- True
 list1 :: Parser a -> Parser (List a)
-list1 = error "todo: Course.Parser#list1"
+list1 p = do
+  a <- p
+  as <- list p
+  pure $ a :. as
 
 -- | Return a parser that produces one or more space characters
 -- (consuming until the first non-space) but fails if
@@ -360,7 +355,7 @@ ageParser :: Parser Int
 ageParser =
   (\k -> case read k of
       Empty  -> constantParser (UnexpectedString k)
-      Full h -> pure h) =<< (list1 digit)
+      Full h -> pure h) =<< list1 digit
 
 -- | Write a parser for Person.firstName.
 -- /First Name: non-empty string that starts with a capital letter and is followed by zero or more lower-case letters/
