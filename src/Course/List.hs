@@ -31,9 +31,7 @@ import qualified System.Environment as E
 -- BEGIN Helper functions and data types
 
 -- The custom list type
-data List t =
-  Nil
-  | t :. List t
+data List t = Nil | t :. List t
   deriving (Eq, Ord)
 
 -- Right-associative
@@ -43,8 +41,7 @@ instance Show t => Show (List t) where
   show = show . foldRight (:) []
 
 -- The list of integers from zero to infinity.
-infinity ::
-  List Integer
+infinity :: List Integer
 infinity =
   let inf x = x :. inf (x+1)
   in inf 0
@@ -80,17 +77,11 @@ foldLeft f b (h :. t) = let b' = f b h in b' `seq` foldLeft f b' t
 -- prop> \x -> x `headOr` infinity == 0
 --
 -- prop> \x -> x `headOr` Nil == x
-headOr ::
-  a
-  -> List a
-  -> a
+headOr :: a -> List a -> a
 headOr x Nil      = x
 headOr _ (h :. _) = h
 
-headOr' ::
-  a
-  -> List a
-  -> a
+headOr' :: a -> List a -> a
 headOr' = foldRight const
 
 -- | The product of the elements of a list.
@@ -103,9 +94,7 @@ headOr' = foldRight const
 --
 -- >>> product (1 :. 2 :. 3 :. 4 :. Nil)
 -- 24
-product ::
-  List Int
-  -> Int
+product :: List Int -> Int
 product = foldRight (*) 1
 
 -- | Sum the elements of the list.
@@ -117,9 +106,7 @@ product = foldRight (*) 1
 -- 10
 --
 -- prop> \x -> foldLeft (-) (sum x) x == 0
-sum ::
-  List Int
-  -> Int
+sum :: List Int -> Int
 sum = foldRight (+) 0
 
 -- | Return the length of the list.
@@ -128,9 +115,7 @@ sum = foldRight (+) 0
 -- 3
 --
 -- prop> \x -> sum (map (const 1) x) == length x
-length ::
-  List a
-  -> Int
+length :: List a -> Int
 length xs = foldRight (const (+ 1)) 0 xs
 
 -- | Map the given function on each element of the list.
@@ -141,10 +126,7 @@ length xs = foldRight (const (+ 1)) 0 xs
 -- prop> \x -> headOr x (map (+1) infinity) == 1
 --
 -- prop> \x -> map id x == x
-map ::
-  (a -> b)
-  -> List a
-  -> List b
+map :: (a -> b) -> List a -> List b
 map f = foldRight ((:.) . f) Nil
 
 -- | Return elements satisfying the given predicate.
@@ -157,10 +139,7 @@ map f = foldRight ((:.) . f) Nil
 -- prop> \x -> filter (const True) x == x
 --
 -- prop> \x -> filter (const False) x == Nil
-filter ::
-  (a -> Bool)
-  -> List a
-  -> List a
+filter :: (a -> Bool) -> List a -> List a
 filter f = foldRight (\x xs -> if f x then x :. xs else xs) Nil
 
 -- | Append two lists to a new list.
@@ -175,10 +154,7 @@ filter f = foldRight (\x xs -> if f x then x :. xs else xs) Nil
 -- prop> \x -> (x ++ y) ++ z == x ++ (y ++ z)
 --
 -- prop> \x -> x ++ Nil == x
-(++) ::
-  List a
-  -> List a
-  -> List a
+(++) :: List a -> List a -> List a
 (++) = flip $ foldRight (:.)
 
 infixr 5 ++
@@ -193,9 +169,7 @@ infixr 5 ++
 -- prop> \x -> headOr x (flatten (y :. infinity :. Nil)) == headOr 0 y
 --
 -- prop> \x -> sum (map length x) == length (flatten x)
-flatten ::
-  List (List a)
-  -> List a
+flatten :: List (List a) -> List a
 flatten = foldRight (++) Nil
 
 -- | Map a function then flatten to a list.
@@ -208,16 +182,10 @@ flatten = foldRight (++) Nil
 -- prop> \x -> headOr x (flatMap id (y :. infinity :. Nil)) == headOr 0 y
 --
 -- prop> \x -> flatMap id (x :: List (List Int)) == flatten x
-flatMap ::
-  (a -> List b)
-  -> List a
-  -> List b
+flatMap :: (a -> List b) -> List a -> List b
 flatMap f = foldRight ((++) . f) Nil
 
-flatMap' ::
-  (a -> List b)
-  -> List a
-  -> List b
+flatMap' :: (a -> List b) -> List a -> List b
 flatMap' f = flatten . map f
 
 -- | Flatten a list of lists to a list (again).

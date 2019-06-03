@@ -11,9 +11,7 @@ import qualified Prelude as P
 -- | The `Optional` data type contains 0 or 1 value.
 --
 -- It might be thought of as a list, with a maximum length of one.
-data Optional a =
-  Full a
-  | Empty
+data Optional a = Full a | Empty
   deriving (Eq, Show)
 
 -- | Map the given function on the possible value.
@@ -23,10 +21,7 @@ data Optional a =
 --
 -- >>> mapOptional (+1) (Full 8)
 -- Full 9
-mapOptional ::
-  (a -> b)
-  -> Optional a
-  -> Optional b
+mapOptional :: (a -> b) -> Optional a -> Optional b
 mapOptional f (Full x) = Full (f x)
 mapOptional _ Empty    = Empty
 
@@ -40,10 +35,7 @@ mapOptional _ Empty    = Empty
 --
 -- >>> bindOptional (\n -> if even n then Full (n - 1) else Full (n + 1)) (Full 9)
 -- Full 10
-bindOptional ::
-  (a -> Optional b)
-  -> Optional a
-  -> Optional b
+bindOptional :: (a -> Optional b) -> Optional a -> Optional b
 bindOptional f (Full x) = f x
 bindOptional _ Empty    = Empty
 
@@ -54,10 +46,7 @@ bindOptional _ Empty    = Empty
 --
 -- >>> Empty ?? 99
 -- 99
-(??) ::
-  Optional a
-  -> a
-  -> a
+(??) :: Optional a -> a -> a
 Full x ?? _ = x
 Empty ?? x  = x
 
@@ -75,10 +64,7 @@ Empty ?? x  = x
 --
 -- >>> Empty <+> Empty
 -- Empty
-(<+>) ::
-  Optional a
-  -> Optional a
-  -> Optional a
+(<+>) :: Optional a -> Optional a -> Optional a
 Full x <+> _      = Full x
 Empty  <+> Full x = Full x
 _      <+> _      = Empty
@@ -90,11 +76,7 @@ _      <+> _      = Empty
 --
 -- >>> optional (+1) 0 Empty
 -- 0
-optional ::
-  (a -> b)
-  -> b
-  -> Optional a
-  -> b
+optional :: (a -> b) -> b -> Optional a -> b
 optional f _ (Full x) = f x
 optional _ x Empty    = x
 
@@ -102,7 +84,7 @@ optional _ x Empty    = x
 -- f' :: a -> b
 
 applyOptional :: Optional (a -> b) -> Optional a -> Optional b
-applyOptional f a = bindOptional (\f' -> mapOptional f' a) f
+applyOptional f a = bindOptional (`mapOptional` a) f
 
 twiceOptional :: (a -> b -> c) -> Optional a -> Optional b -> Optional c
 twiceOptional f = applyOptional . mapOptional f
@@ -112,17 +94,12 @@ contains _ Empty    = False
 contains a (Full z) = a == z
 
 instance P.Functor Optional where
-  fmap =
-    M.liftM
+  fmap = M.liftM
 
 instance A.Applicative Optional where
-  (<*>) =
-    M.ap
-  pure =
-    Full
+  (<*>) = M.ap
+  pure = Full
 
 instance P.Monad Optional where
-  (>>=) =
-    flip bindOptional
-  return =
-    Full
+  (>>=) = flip bindOptional
+  return = Full

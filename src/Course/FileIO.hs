@@ -98,7 +98,7 @@ printFiles =
   void . traverse' (uncurry printFile)
 
 traverse' :: Applicative f => (a -> f b) -> List a -> f (List b)
-traverse' f = sequence . map f
+traverse' = sequence . map f
 
 -- Given a file name, return (file name and file contents).
 -- Use @readFile@.

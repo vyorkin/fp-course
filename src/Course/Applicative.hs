@@ -29,12 +29,8 @@ import qualified Prelude as P (fmap, return, (>>=))
 --   `∀u y. u <*> pure y = pure ($ y) <*> u`
 
 class Functor f => Applicative f where
-  pure ::
-    a -> f a
-  (<*>) ::
-    f (a -> b)
-    -> f a
-    -> f b
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
 
 infixl 4 <*>
 
@@ -45,14 +41,10 @@ infixl 4 <*>
 -- >>> ExactlyOne (+10) <*> ExactlyOne 8
 -- ExactlyOne 18
 instance Applicative ExactlyOne where
-  pure ::
-    a
-    -> ExactlyOne a
+  pure :: a -> ExactlyOne a
   pure = ExactlyOne
-  (<*>) ::
-    ExactlyOne (a -> b)
-    -> ExactlyOne a
-    -> ExactlyOne b
+
+  (<*>) :: ExactlyOne (a -> b) -> ExactlyOne a -> ExactlyOne b
   (<*>) = mapExactlyOne . runExactlyOne
 
 -- | Insert into a List.
@@ -65,7 +57,7 @@ instance Applicative List where
   pure :: a -> List a
   pure = (:. Nil)
   (<*>) :: List (a -> b) -> List a -> List b
-  fs <*> xs = flatMap (flip map xs) fs
+  fs <*> xs = flatMap (`map` xs) fs
 
 -- (<*>) = zipWith ($) -- is not good enough,
 -- since we need to apply each function to each value
@@ -83,14 +75,9 @@ instance Applicative List where
 -- >>> Full (+8) <*> Empty
 -- Empty
 instance Applicative Optional where
-  pure ::
-    a
-    -> Optional a
+  pure :: a -> Optional a
   pure = Full
-  (<*>) ::
-    Optional (a -> b)
-    -> Optional a
-    -> Optional b
+  (<*>) :: Optional (a -> b) -> Optional a -> Optional b
   (<*>) = applyOptional -- we won't invent anything here, since we already have `Course.Optional.applyOptional`
 
 -- | Insert into a constant function.
@@ -112,12 +99,9 @@ instance Applicative Optional where
 --
 -- prop> \x y -> pure x y == x
 instance Applicative ((->) t) where
-  pure :: a -> ((->) t a)
+  pure :: a -> t -> a
   pure = const
-  (<*>)
-    :: ((->) t (a -> b))
-    -> ((->) t a)
-    -> ((->) t b)
+  (<*>) :: (t -> a -> b) -> (t -> a) -> t -> b
   (<*>) tab ta t = tab t (ta t)
 
 -- f :: t -> a
@@ -145,12 +129,7 @@ instance Applicative ((->) t) where
 --
 -- >>> lift2 (+) length sum (listh [4,5,6])
 -- 18
-lift2 ::
-  Applicative f =>
-  (a -> b -> c)
-  -> f a
-  -> f b
-  -> f c
+lift2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
 lift2 f fa = (f <$> fa <*>)
 
 -- | Apply a ternary function in the environment.
@@ -288,11 +267,7 @@ lift1 = (<$>)
 -- prop> \x y z a b c -> (x :. y :. z :. Nil) <* (a :. b :. c :. Nil) == (x :. x :. x :. y :. y :. y :. z :. z :. z :. Nil)
 --
 -- prop> \x y -> Full x <* Full y == Full x
-(<*) ::
-  Applicative f =>
-  f b
-  -> f a
-  -> f b
+(<*) :: Applicative f => f b -> f a -> f b
 (<*) = lift2 const
 
 -- | Sequences a list of structures to a structure of list.
@@ -311,10 +286,7 @@ lift1 = (<$>)
 --
 -- >>> sequence ((*10) :. (+2) :. Nil) 6
 -- [60,8]
-sequence ::
-  Applicative f =>
-  List (f a)
-  -> f (List a)
+sequence :: Applicative f => List (f a) -> f (List a)
 sequence = foldRight (lift2 (:.)) (pure Nil)
 
 -- | Replicate an effect a given number of times.
@@ -335,11 +307,7 @@ sequence = foldRight (lift2 (:.)) (pure Nil)
 --
 -- >>> replicateA 3 ('a' :. 'b' :. 'c' :. Nil)
 -- ["aaa","aab","aac","aba","abb","abc","aca","acb","acc","baa","bab","bac","bba","bbb","bbc","bca","bcb","bcc","caa","cab","cac","cba","cbb","cbc","cca","ccb","ccc"]
-replicateA ::
-  Applicative f =>
-  Int
-  -> f a
-  -> f (List a)
+replicateA :: Applicative f => Int -> f a -> f (List a)
 replicateA n = sequence . replicate n
 
 -- my original wrong solution:

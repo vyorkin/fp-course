@@ -20,22 +20,23 @@ import qualified Prelude as P ((=<<))
 --   `∀f g x. g =<< (f =<< x) ≅ ((g =<<) . f) =<< x`
 class Applicative f => Monad f where
   -- Pronounced, bind.
-  (=<<) ::
-    (a -> f b)
-    -> f a
-    -> f b
+  (=<<) :: (a -> f b) -> f a -> f b
 
 infixr 1 =<<
+
+-- <$> :: (a -> b) -> f a -> f b
+-- <*> :: f (a -> b) -> f a -> f b
+-- =<< :: (a -> f b) -> f a -> f b
+
+-- exponential / invariant functor
+-- invmap :: (a -> b) -> (b -> a) -> f a -> f b
 
 -- | Binds a function on the ExactlyOne monad.
 --
 -- >>> (\x -> ExactlyOne(x+1)) =<< ExactlyOne 2
 -- ExactlyOne 3
 instance Monad ExactlyOne where
-  (=<<) ::
-    (a -> ExactlyOne b)
-    -> ExactlyOne a
-    -> ExactlyOne b
+  (=<<) :: (a -> ExactlyOne b) -> ExactlyOne a -> ExactlyOne b
   (=<<) = bindExactlyOne
 
 -- (=<<) f = f . runExactlyOne
@@ -45,10 +46,7 @@ instance Monad ExactlyOne where
 -- >>> (\n -> n :. n :. Nil) =<< (1 :. 2 :. 3 :. Nil)
 -- [1,1,2,2,3,3]
 instance Monad List where
-  (=<<) ::
-    (a -> List b)
-    -> List a
-    -> List b
+  (=<<) :: (a -> List b) -> List a -> List b
   (=<<) = flatMap
 
 -- | Binds a function on an Optional.
@@ -67,10 +65,7 @@ instance Monad Optional where
 -- >>> ((*) =<< (+10)) 7
 -- 119
 instance Monad ((->) t) where
-  (=<<) ::
-    (a -> ((->) t b))
-    -> ((->) t a)
-    -> ((->) t b)
+  (=<<) :: (a -> ((->) t b)) -> ((->) t a) -> ((->) t b)
   (=<<) atb ta t = atb (ta t) t
 
 -- | Witness that all things with (=<<) and (<$>) also have (<*>).
@@ -104,11 +99,7 @@ instance Monad ((->) t) where
 --
 -- >>> ((*) <**> (+2)) 3
 -- 15
-(<**>) ::
-  Monad f =>
-  f (a -> b)
-  -> f a
-  -> f b
+(<**>) :: Monad f => f (a -> b) -> f a -> f b
 (<**>) fs fa = (<$> fa) =<< fs
 
 infixl 4 <**>
@@ -126,10 +117,7 @@ infixl 4 <**>
 --
 -- >>> join (+) 7
 -- 14
-join ::
-  Monad m =>
-  m (m a)
-  -> m a
+join :: Monad m => m (m a) -> m a
 join = (id =<<)
 -- | Implement a flipped version of @(=<<)@, however, use only
 -- @join@ and @(<$>)@.
@@ -137,11 +125,7 @@ join = (id =<<)
 --
 -- >>> ((+10) >>= (*)) 7
 -- 119
-(>>=) ::
-  Monad f =>
-  f a
-  -> (a -> f b)
-  -> f b
+(>>=) :: Monad f => f a -> (a -> f b) -> f b
 (>>=) = flip (=<<)
 
 infixl 1 >>=
@@ -151,12 +135,7 @@ infixl 1 >>=
 --
 -- >>> ((\n -> n :. n :. Nil) <=< (\n -> n+1 :. n+2 :. Nil)) 1
 -- [2,2,3,3]
-(<=<) ::
-  Monad f =>
-  (b -> f c)
-  -> (a -> f b)
-  -> a
-  -> f c
+(<=<) :: Monad f => (b -> f c) -> (a -> f b) -> a -> f c
 (<=<) f g x = f =<< g x
 
 infixr 1 <=<
@@ -166,5 +145,4 @@ infixr 1 <=<
 -----------------------
 
 instance Monad IO where
-  (=<<) =
-    (P.=<<)
+  (=<<) = (P.=<<)
